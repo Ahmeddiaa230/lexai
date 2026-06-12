@@ -16,8 +16,20 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 
 // 2. Cross-Origin Resource Sharing
+// In production, set FRONTEND_URL env variable to your Vercel domain
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL]
+  : ['http://localhost:5173', 'http://localhost:4173'];
+
 app.use(cors({
-  origin: '*', // Adjust to specific frontend origin in production (e.g. process.env.FRONTEND_URL)
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || !process.env.FRONTEND_URL) {
+      return callback(null, true);
+    }
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
